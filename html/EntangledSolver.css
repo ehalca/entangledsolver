@@ -1,0 +1,19 @@
+.tab {
+	display:none;
+}
+
+body {
+	width:800px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+#previewSelect{
+	width:600px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.split{
+	width:100%;
+}

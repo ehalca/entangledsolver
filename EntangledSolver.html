@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="js/EntangledSolver.js"></script>
+<script type="text/javascript" src="js/ESHelper.js"></script>
+<script type="text/javascript" src="js/jQuery2.js"></script>
+<script type="text/javascript" src="js/Kinect.js"></script>
+<script type="text/javascript" src="html/bootstrap/js/bootstrap.min.js"></script>
+<link rel='stylesheet' href='html/bootstrap/css/bootstrap.min.css'/>
+<link rel='stylesheet' href='html/bootstrap/css/bootstrap-responsive.min.css'/>
+<link rel='stylesheet' href='html/EntangledSolver.css'/>
+</head>
+<script>
+$( document ).ready( function(){
+	var solver = new EntangledSolver();
+	var steps = ['Select Image','Adjust Image'];
+	var step = 0;
+	
+	gotoStep(step, steps);
+	
+	$("#nextStep").click(function(){
+		
+		step = step + 1;
+		gotoStep(step, steps);
+		tabInit(step);
+	});
+	
+	$("#fileSelector").change(function(evt){
+		solver.setInitialImage(evt.target.files[0],{selector:"previewSelect",maxWidth:600});
+	});
+	
+	function tabInit(tabIndex){
+		if (tabIndex == 1){
+			solver.startCroping({selector:"originalImage",maxWidth:300});
+			
+			$('#originalImage').mousedown( function() {
+				$(document).mousemove(function(evt) {
+					var x = evt.pageX - $('#originalImage').offset().left;
+					var y = evt.pageY - $('#originalImage').offset().top;
+				 $("#resultImage").html("x : "+x+"<br/> y:"+y);
+				});
+
+				$(document).mouseup(function() {
+					$(this).unbind();  // unbind events from document
+				});
+			});
+		}
+	}
+	
+} )
+
+
+
+
+</script>
+<body>
+<ul class="nav nav-tabs" id="tabs">
+</ul>
+	<div id="tab0" class="tab">
+		<img id="inputImage"/>
+		<input type="file" id="fileSelector"></input>
+		<br/>
+		<div id="previewSelect"></div>
+	</div>
+	<div id="tab1" class="tab">
+		<div class="row split">
+			<div class="span4" id="originalImage"></div>
+			<div class="span4" id="resultImage"></div>
+		</div>
+	</div>	
+<br/>
+<a class="btn btn-success" href="#" id="nextStep">Next</a>
+
+</body>
+
+
+
+</html>
