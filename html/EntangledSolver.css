@@ -17,3 +17,7 @@ body {
 .split{
 	width:100%;
 }
+
+#options .option{
+	width:100%;
+}

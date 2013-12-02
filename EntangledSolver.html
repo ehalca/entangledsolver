@@ -13,7 +13,7 @@
 <script>
 $( document ).ready( function(){
 	var solver = new EntangledSolver();
-	var steps = ['Select Image','Adjust Image'];
+	var steps = ['Select Image','Adjust Image','Configure Data'];
 	var step = 0;
 	
 	gotoStep(step, steps);
@@ -31,18 +31,28 @@ $( document ).ready( function(){
 	
 	function tabInit(tabIndex){
 		if (tabIndex == 1){
-			solver.startCroping({selector:"originalImage",maxWidth:300});
-			
-			$('#originalImage').mousedown( function() {
-				$(document).mousemove(function(evt) {
-					var x = evt.pageX - $('#originalImage').offset().left;
-					var y = evt.pageY - $('#originalImage').offset().top;
-				 $("#resultImage").html("x : "+x+"<br/> y:"+y);
-				});
-
-				$(document).mouseup(function() {
-					$(this).unbind();  // unbind events from document
-				});
+			solver.startCroping({selector:"originalImage",maxWidth:300},{selector:"resultImage",maxWidth:300});
+		}else if (tabIndex == 2){
+			solver.createMath({selector:"adjustedImage",maxWidth:300},{selector:"mathImage",maxWidth:300});
+			solver.configCommands([{
+										commandName:"undo", 
+										selector:"undo-btn", 
+										event:"click"
+									},
+									{
+										commandName:"removeSelected", 
+										selector:"delete-btn", 
+										event:"click"
+									}]);
+			$("#selection-btn").click(function(){
+				solver.selectionMode = true;
+				$(".switch").not(this).removeClass("active");
+				$(this).addClass("active");
+			});
+			$("#line-btn").click(function(){
+				solver.selectionMode = false;
+				$(".switch").not(this).removeClass("active");
+				$(this).addClass("active");
 			});
 		}
 	}
@@ -68,6 +78,23 @@ $( document ).ready( function(){
 			<div class="span4" id="resultImage"></div>
 		</div>
 	</div>	
+	<div id="tab2" class="tab">
+		<div class="row split">
+			<div class="span3" id="adjustedImage"></div>
+			<div class="span3" id="mathImage"></div>
+			<div class="span2" id="options">
+				<div class="btn-toolbar">
+					<div class="btn-group">
+						<a class="btn switch active" id="selection-btn" href="#"> <i class="icon-hand-up"></i>Selection</a>
+						<a class="btn switch" id="line-btn" href="#"> <i class="icon-pencil"></i>Line connecction</a>
+					</div>
+				</div>
+				<a class="btn option" id="undo-btn" href="#"> <i class="icon-repeat"></i>Undo</a>
+				<br/>
+				<a class="btn option" id="delete-btn" href="#"> <i class="icon-remove-sign"></i>Delete</a>
+			</div>
+		</div>
+	</div>
 <br/>
 <a class="btn btn-success" href="#" id="nextStep">Next</a>
 

@@ -20,7 +20,7 @@ function getImagePosition(img, maxWidth){
 		heightResult = (maxWidth * img.height)/img.width;
 	}
 	
-	return {x : posX, y : posY, height : heightResult, width : widthResult};
+	return {x : posX, y : posY, height : heightResult, width : widthResult, xCompressing : img.width/widthResult, yCompressing : img.height/heightResult};
 }
 
 function assert(condition, message) {
