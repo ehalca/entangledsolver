@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script type="text/javascript" src="js/EntangledSolver.js"></script>
+<script type="text/javascript" src="js/graphSolver.js"></script>
 <script type="text/javascript" src="js/ESHelper.js"></script>
+<script type="text/javascript" src="js/EntangledSolver.js"></script>
 <script type="text/javascript" src="js/jQuery2.js"></script>
 <script type="text/javascript" src="js/Kinect.js"></script>
 <script type="text/javascript" src="html/bootstrap/js/bootstrap.min.js"></script>
@@ -13,7 +14,7 @@
 <script>
 $( document ).ready( function(){
 	var solver = new EntangledSolver();
-	var steps = ['Select Image','Adjust Image','Configure Data'];
+	var steps = ['Select Image','Adjust Image','Configure Data','Play'];
 	var step = 0;
 	
 	gotoStep(step, steps);
@@ -54,6 +55,19 @@ $( document ).ready( function(){
 				$(".switch").not(this).removeClass("active");
 				$(this).addClass("active");
 			});
+		}else if (tabIndex == 3){
+			solver.play({selector:"playground",width:800,height:800});
+			$("#solve-btn").click(function(){
+				$("#solve-btn").hide();
+				solver.callSolver(function(){
+					$("#play-btn").show();
+				});
+				
+			});
+			$("#play-btn").click(function(){
+				solver.autoPlay();
+			});
+			
 		}
 	}
 	
@@ -95,10 +109,19 @@ $( document ).ready( function(){
 			</div>
 		</div>
 	</div>
+	<div id="tab3" class="tab">
+		<div id="playground">
+		</div>
+		<div id="options">
+			<a class="btn option" id="solve-btn" href="#"> <i class="icon-tasks"></i>Solve</a>
+			<a class="btn option" id="play-btn" href="#" style="display:none;"> <i class="icon-play"></i>Play</a>
+		</div>
+	</div>
 <br/>
 <a class="btn btn-success" href="#" id="nextStep">Next</a>
 
 </body>
+
 
 
 

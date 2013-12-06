@@ -5,6 +5,13 @@ function showStep(step){
 	$("#tab"+step).show();
 }
 
+function findNodeByDot(nodes,dot){
+	for (var i = 0; i < nodes.length; i++){
+		if (nodes[i].imageDot == dot)
+			return nodes[i];
+	}
+}
+
 function getImagePosition(img, maxWidth){
 	var posX = 0;
 	var posY = 0;
