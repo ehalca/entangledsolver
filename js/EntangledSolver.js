@@ -99,6 +99,15 @@ EntangledSolver.prototype.initImg = function(src){
 	this.initialImage = src;
 }
 
+EntangledSolver.prototype.createGame = function(container){
+	var minConPerDot = 2;
+	var maxConPerDot = container.level;
+	var aprxmConnNumber = container.level * container.level;
+	var center = {x:container.width/2,y:container.height/2};
+	var circle = generateCirclePoints(center,center.x/10,4);
+	console.log(circle);
+}
+
 EntangledSolver.prototype.drawInitialImage = function(container){
 	var stage = new Kinetic.Stage({
         container: container.selector
@@ -235,7 +244,7 @@ EntangledSolver.prototype.createMath = function(fromContainer, toContainer){
       this.mathStage.setWidth(positioning.width);
 	  this.mathStage.setHeight(positioning.height);
 	  imageResult.stage.on('mousedown',function(){
-			 solver.executeCommand({name:"addNode", target:getDot(solver.lastDrawnImage.stage.getPointerPosition())},solver.mathStage);
+			 solver.executeCommand({name:"addNode", target:getDot(solver.lastDrawnImage.stage.getPointerPosition()),originalPos:solver.lastDrawnImage.stage.getPointerPosition()},solver.mathStage);
 	  });
 }
 
@@ -272,6 +281,15 @@ EntangledSolver.prototype.refreshDots = function(){
 	}
 }
 
+EntangledSolver.prototype.repositionDots = function(){
+	for (var i = 0; i < this.commandsToExecute.length; i++){
+		if ("addNode" == this.commandsToExecute[i].name){
+			this.commandsToExecute[i].target.setX(this.commandsToExecute[i].originalPos.x);
+			this.commandsToExecute[i].target.setY(this.commandsToExecute[i].originalPos.y);
+		}
+	}
+}
+
 EntangledSolver.prototype.getCommandFor = function(selector, event){
 	for (var i = 0; i < this.configs.length; i ++){
 		if (this.configs[i].selector == selector && this.configs[i].event == event){
@@ -296,14 +314,25 @@ EntangledSolver.prototype.renderToStage = function(stage, refresh){
 	}
 }
 
-EntangledSolver.prototype.autoPlay = function(){
+EntangledSolver.prototype.autoPlay = function(success){
 	var solver = this;
 	this.timeInterval = 100;
 	this.totalTime = 2000;
-	this.moveDot(0,1);
+	this.moveDot(0,1,null,success);
 }
 
-EntangledSolver.prototype.moveDot = function(commandIndex,step,started){
+EntangledSolver.prototype.autoRePlay = function(success){
+	this.repositionDots();
+	this.renderToStage(this.playStage, false);
+	this.moveDot(0,1,null,success);
+}
+
+EntangledSolver.prototype.replay = function(){
+	this.repositionDots();
+	this.renderToStage(this.playStage, false);
+}
+
+EntangledSolver.prototype.moveDot = function(commandIndex,step,started,finished){
 	var solver = this;
 	var steps = this.totalTime / this.timeInterval;
 	var command = commandIndex;
@@ -327,12 +356,15 @@ EntangledSolver.prototype.moveDot = function(commandIndex,step,started){
 			toStep = 1;
 			command = commandIndex + 1;
 		}else{
+			if (typeof(finished) == "function") {
+				finished();
+			}
 			return;
 		}
 	}
 	
 	window.setTimeout(function(){
-			solver.moveDot(command,toStep,startedNew);
+			solver.moveDot(command,toStep,startedNew,finished);
 		},this.timeInterval);
 		 
 }
@@ -651,6 +683,20 @@ function separateConnections(connections, dot){
 	}
 	
 	return {target: targetConnections, rest: restConnections}
+}
+
+function generateCirclePoints(center,r,n){
+		var points = new Array();
+		var circle = {points:points};
+		var a = center.x
+        var b = center.y;
+        for (var i = 0; i < n; i++) {
+            var t = 2 * Math.PI * i / n;
+            var x = Math.round(a + r * Math.cos(t));
+            var y = Math.round(b + r * Math.sin(t));
+            points[points.length] = {x:x,y:y,circle:circle};
+        }
+		return circle;
 }
 
 function rgbToHex(r, g, b) {

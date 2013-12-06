@@ -14,13 +14,13 @@
 <script>
 $( document ).ready( function(){
 	var solver = new EntangledSolver();
-	var steps = ['Select Image','Adjust Image','Configure Data','Play'];
+	var steps = ['Create Game','Select Image','Adjust Image','Configure Data','Play'];
 	var step = 0;
 	
 	gotoStep(step, steps);
 	
-	$("#nextStep").click(function(){
-		
+	$(".nextStep").click(function(){
+		$("#nextStep").show();
 		step = step + 1;
 		gotoStep(step, steps);
 		tabInit(step);
@@ -30,10 +30,22 @@ $( document ).ready( function(){
 		solver.setInitialImage(evt.target.files[0],{selector:"previewSelect",maxWidth:600});
 	});
 	
+	$("#startGame").click(function(){
+			var level = $("#levelSelector").val();
+			if (level < 1 || level > 10)
+				level = 5;
+			solver.createGame({selector:"playground",width:800,height:800,level:level});
+			gotoStep(4, steps);
+			tabInit(4);
+	});
+	
 	function tabInit(tabIndex){
-		if (tabIndex == 1){
-			solver.startCroping({selector:"originalImage",maxWidth:300},{selector:"resultImage",maxWidth:300});
+		if(tabIndex == 1){
+		
+			
 		}else if (tabIndex == 2){
+			solver.startCroping({selector:"originalImage",maxWidth:300},{selector:"resultImage",maxWidth:300});
+		}else if (tabIndex == 3){
 			solver.createMath({selector:"adjustedImage",maxWidth:300},{selector:"mathImage",maxWidth:300});
 			solver.configCommands([{
 										commandName:"undo", 
@@ -55,7 +67,7 @@ $( document ).ready( function(){
 				$(".switch").not(this).removeClass("active");
 				$(this).addClass("active");
 			});
-		}else if (tabIndex == 3){
+		}else if (tabIndex == 4){
 			solver.play({selector:"playground",width:800,height:800});
 			$("#solve-btn").click(function(){
 				$("#solve-btn").hide();
@@ -65,7 +77,25 @@ $( document ).ready( function(){
 				
 			});
 			$("#play-btn").click(function(){
-				solver.autoPlay();
+				$(this).hide();
+				solver.autoPlay(function(){
+					$("#autoreplay-btn").show();
+					$("#replay-btn").show();
+				});
+			});
+			$("#autoreplay-btn").click(function(){
+				$("#autoreplay-btn").hide();
+				$("#replay-btn").hide();
+				solver.autoRePlay(function(){
+					$("#autoreplay-btn").show();
+					$("#replay-btn").show();
+				});
+			});
+			$("#replay-btn").click(function(){
+				$("#autoreplay-btn").hide();
+				$("#replay-btn").hide();
+				$("#play-btn").show();
+				solver.replay();
 			});
 			
 		}
@@ -81,18 +111,26 @@ $( document ).ready( function(){
 <ul class="nav nav-tabs" id="tabs">
 </ul>
 	<div id="tab0" class="tab">
+		Select Game Level & start it! 
+		<input type="text" id="levelSelector" value="5"></input>
+		<a class="btn" id="startGame" href="#">Start</a>
+		<br/>
+		Or create your own:
+		<a class="btn nextStep" id="createGame" href="#">Create</a>
+	</div>
+	<div id="tab1" class="tab">
 		<img id="inputImage"/>
 		<input type="file" id="fileSelector"></input>
 		<br/>
 		<div id="previewSelect"></div>
 	</div>
-	<div id="tab1" class="tab">
+	<div id="tab2" class="tab">
 		<div class="row split">
 			<div class="span4" id="originalImage"></div>
 			<div class="span4" id="resultImage"></div>
 		</div>
 	</div>	
-	<div id="tab2" class="tab">
+	<div id="tab3" class="tab">
 		<div class="row split">
 			<div class="span3" id="adjustedImage"></div>
 			<div class="span3" id="mathImage"></div>
@@ -109,16 +147,18 @@ $( document ).ready( function(){
 			</div>
 		</div>
 	</div>
-	<div id="tab3" class="tab">
+	<div id="tab4" class="tab">
 		<div id="playground">
 		</div>
 		<div id="options">
 			<a class="btn option" id="solve-btn" href="#"> <i class="icon-tasks"></i>Solve</a>
 			<a class="btn option" id="play-btn" href="#" style="display:none;"> <i class="icon-play"></i>Play</a>
+			<a class="btn option" id="replay-btn" href="#" style="display:none;"> <i class="icon-repeat"></i>Replay</a>
+			<a class="btn option" id="autoreplay-btn" href="#" style="display:none;"> <i class="icon-repeat"></i>Replay Auto</a>
 		</div>
 	</div>
 <br/>
-<a class="btn btn-success" href="#" id="nextStep">Next</a>
+<a class="btn btn-success nextStep" href="#" id="nextStep" style="display:none">Next</a>
 
 </body>
 
