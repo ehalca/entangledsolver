@@ -87,6 +87,8 @@ function EntangledSolver() {
 		this.selectionColor = "blue";
 		this.selectionMode = true;
 		this.autoPlayMove = 1000;
+		this.genPoints = new Array();
+		this.genRels = new Array();
 }
 
 EntangledSolver.prototype.drawImage = function(container){
@@ -100,12 +102,119 @@ EntangledSolver.prototype.initImg = function(src){
 }
 
 EntangledSolver.prototype.createGame = function(container){
-	var minConPerDot = 2;
-	var maxConPerDot = container.level;
-	var aprxmConnNumber = container.level * container.level;
+	this.minConPerDot = 2;
+	this.maxConPerDot = container.level;
+	this.aprxmConnNumber = parseInt(container.level) * parseInt(container.level);
+	this.generatedConnNumber = 0;
 	var center = {x:container.width/2,y:container.height/2};
-	var circle = generateCirclePoints(center,center.x/10,4);
-	console.log(circle);
+	var i = 10;
+	while (this.generatedConnNumber < this.aprxmConnNumber ){
+		var circle = generateCirclePoints(center,i*i+center.x/15,(10-i+1)*4+1);
+		this.connectCircle(circle);
+		i--;
+	}
+	console.log(this.genRels);
+	this.createGameCommands();
+	this.chaosPoints(container);
+}
+
+EntangledSolver.prototype.chaosPoints = function(container){
+	var maxWidth = container.width;
+	var maxHeight = container.height;
+	for (var i = 0; i < this.commandsToExecute.length; i++){
+		if ("addNode" == this.commandsToExecute[i].name){
+			this.commandsToExecute[i].target.setX(Math.floor((Math.random()*maxWidth)+1));
+			this.commandsToExecute[i].target.setY(Math.floor((Math.random()*maxHeight)+1));
+		}
+	}
+}
+
+
+
+EntangledSolver.prototype.createGameCommands = function(){
+	for (var i = 0; i < this.genRels.length; i++){
+		var dots = this.findGenDotsBy(this.genRels[i].p,this.genRels[i].q);
+		for (var j = 0; j < dots.length; j++){
+			if (!dots[j].found){
+				this.commandsToExecute[this.commandsToExecute.length] = {name:"addNode", target:dots[j].imgDot,originalPos:dots[j].originalPos};
+			}
+		}
+		this.commandsToExecute[this.commandsToExecute.length] = {name:'addLine',from:dots[0].imgDot,to:dots[1].imgDot};
+	}
+}
+
+EntangledSolver.prototype.findGenDotsBy = function(p,q){
+	var result = new Array();
+	var poses = [this.genPoints[p],this.genPoints[q]];
+	for (var pos = 0; pos < poses.length; pos++){
+		var dot = null;
+		for (var i = 0; i < this.commandsToExecute.length; i++){
+			if ("addNode" == this.commandsToExecute[i].name 
+				&&(this.commandsToExecute[i].originalPos.x == poses[pos].x)
+				&& (this.commandsToExecute[i].originalPos.y == poses[pos].y)){
+					dot = this.commandsToExecute[i].target;
+					break;
+				}
+		}
+		var found = true;
+		if (!dot){
+			dot = getDot(poses[pos]);
+			found = false;
+		}
+		result[result.length] = {imgDot:dot,originalPos:poses[pos],found:found};
+	}
+	return result;
+}
+
+EntangledSolver.prototype.connectCircle = function(circle){
+	var from = this.genPoints.length;
+	this.genPoints = this.genPoints.concat(circle);
+	var last = -1;
+	for (var j = from; j < this.genPoints.length; j++){
+		if (last > 0 && j > last){
+			last = -1;
+			j--;
+			continue;
+		}
+		for (var i = 0; i < this.genPoints.length; i++){
+			if (last > 0 && i != last){
+				continue;
+			}else{
+				last = -1;
+			}
+			if (i != j && this.isNonIntersect(i,j)){
+				this.connect(i,j);
+				this.generatedConnNumber++;
+				if (i > j){
+					last = i;
+					break;
+				}
+			}
+			if (this.generatedConnNumber > this.aprxmConnNumber){
+				return;
+			}
+		}
+	}
+	
+}
+
+EntangledSolver.prototype.isNonIntersect = function(p,q){
+	for (var i = 0; i < this.genRels.length; i++){
+		if ((this.genRels[i].p == p && this.genRels[i].q == q)
+			||(this.genRels[i].p == q && this.genRels[i].q == p)){
+				return false;
+			}
+		if (this.genRels[i].p == p || this.genRels[i].q == p || this.genRels[i].q == q || this.genRels[i].q == q)
+			continue;
+		if (intersection(this.genPoints[p].x,this.genPoints[p].y,this.genPoints[q].x,this.genPoints[q].y,this.genPoints[this.genRels[i].p].x,this.genPoints[this.genRels[i].p].y,this.genPoints[this.genRels[i].q].x,this.genPoints[this.genRels[i].q].y)){
+			return false;
+		}
+	}
+	return true;
+}
+
+EntangledSolver.prototype.connect = function(p,q){
+	this.genRels[this.genRels.length] = {p:p,q:q};
 }
 
 EntangledSolver.prototype.drawInitialImage = function(container){
@@ -332,15 +441,23 @@ EntangledSolver.prototype.replay = function(){
 	this.renderToStage(this.playStage, false);
 }
 
+EntangledSolver.prototype.validatePuzzle = function(){
+	for (var i = 0; i < this.commandsToExecute.length; i++){
+			if ("addNode" == this.commandsToExecute[i].name){
+				this.updateMovingDot(this.commandsToExecute[i].target,false);
+			}
+	}
+}
+
 EntangledSolver.prototype.moveDot = function(commandIndex,step,started,finished){
 	var solver = this;
 	var steps = this.totalTime / this.timeInterval;
 	var command = commandIndex;
 	var toStep = 0;
 	var startedNew;
+	var dot = findNodeById(this.nodes,this.moveCommands[commandIndex].id).imageDot;
 	if (step <= steps){
 		var stepMove = step / steps;
-		var dot = findNodeById(this.nodes,this.moveCommands[commandIndex].id).imageDot;
 		if (!this.selectedObject || this.selectedObject.obj != dot){
 			this.selectObj(dot);
 		}
@@ -349,14 +466,16 @@ EntangledSolver.prototype.moveDot = function(commandIndex,step,started,finished)
 		dot.setX(startedNew.x+(to.x - startedNew.x)*stepMove);
 		dot.setY(startedNew.y+(to.y - startedNew.y)*stepMove);
 		dot.getLayer().draw();
-		this.updateMovingDot(dot);
+		this.updateMovingDot(dot,true);
 		toStep = step + 1;
 	}else{
 		if (commandIndex < (this.moveCommands.length - 1)){
 			toStep = 1;
 			command = commandIndex + 1;
+			this.updateMovingDot(dot,false);
 		}else{
 			if (typeof(finished) == "function") {
+				this.validatePuzzle();
 				finished();
 			}
 			return;
@@ -430,12 +549,13 @@ EntangledSolver.prototype.addNewNode = function(dot,stage){
 	return dot;
 }
 
-EntangledSolver.prototype.updateMovingDot = function(dot){
+EntangledSolver.prototype.updateMovingDot = function(dot,slow){
 	var node = findNodeByDot(this.nodes,dot);
 	for (var i=0; i < node.imageLines.length; i++){
 		node.imageLines[i].updateLine(dot);
 	}
-	this.updateDot(dot);
+	if (!slow)
+		this.updateDot(dot);
 }
 
 EntangledSolver.prototype.updateDot = function(dot){
@@ -530,7 +650,9 @@ EntangledSolver.prototype.removeObj = function(nodeObj){
 EntangledSolver.prototype.play = function(container){
 	var solver = this;
 	this.selectionMode = true;
-	this.mathStage.clear();
+	if (this.mathStage){
+		this.mathStage.clear();
+	}
 	this.playStage = new Kinetic.Stage({
         container: container.selector,
 		width: container.width,
@@ -588,7 +710,7 @@ function getDot(pos){
 	var circle =  new Kinetic.Circle({
         x: pos.x,
         y: pos.y,
-        radius: 15,
+        radius: 6,
         fill: 'red',
         stroke: 'black',
         strokeWidth: 1,
@@ -687,16 +809,15 @@ function separateConnections(connections, dot){
 
 function generateCirclePoints(center,r,n){
 		var points = new Array();
-		var circle = {points:points};
 		var a = center.x
         var b = center.y;
         for (var i = 0; i < n; i++) {
             var t = 2 * Math.PI * i / n;
             var x = Math.round(a + r * Math.cos(t));
             var y = Math.round(b + r * Math.sin(t));
-            points[points.length] = {x:x,y:y,circle:circle};
+            points[points.length] = {x:x,y:y};
         }
-		return circle;
+		return points;
 }
 
 function rgbToHex(r, g, b) {
